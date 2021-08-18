@@ -1,0 +1,17 @@
+Package: licor.peaks
+Title: What the Package Does (One Line, Title Case)
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Jacob",
+           family = "Anderson",
+           role = c("aut", "cre"),
+           email = "jacob.anderson.science@gmail.com",
+           comment = c(ORCID = "0000-0003-2098-4257"))
+Description: The licor.peaks package is a user-friendly time saving approach to consolidating, summarizing, and visualizing CO2 text file outputs from a LI-COR® 8100A Trace Gas Analyzer (LI-8100A). 
+	Using this package will allow the user to quickly find peak values, area under the curve for each peak, and corrected ppm values based on standard curves of known concentrations.
+License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
+    license
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1

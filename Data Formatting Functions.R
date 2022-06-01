@@ -51,6 +51,45 @@ numextract_tot <- function(data){
   return(data)
 }
 
+# Class changing function
+class_change <- function(data, var, class_fun){
+  comb <- var[str_detect(var, ':')]
+  var_sel <- var[!str_detect(var, ':')]
+  for(i in comb){
+    var0 <- unlist(str_split(i, ':'))
+    var_sel <- c(var_sel, names(select(data, var0[1]:var0[2])))
+  }
+  data[var_sel] <- lapply(data[var_sel], class_fun)
+  return(data)
+}
+
+# Filter rows containing NA's
+find_na <- function(data, var = names(data), match = 'any'){
+  if(match == 'any'){
+    b <- data %>% filter_at(vars(var), any_vars(is.na(.)))
+    return(b)
+  } else if(match == 'all'){
+    b <- data %>% filter_at(vars(var), all_vars(is.na(.)))
+    return(b)
+  }
+}
+
+# Equation Split sort and remove copies
+EQ_spl_rmc <- function(data, eq_col){
+  a <- str_split(data[[eq_col]], ' ~ ')
+  b <- lapply(a, str_sort)
+  c <- cbind(data, test2 = unlist(lapply(b, str_c, collapse = ' ')))
+  d <- c[!duplicated(c$test2),]
+  return(select(d, -test2))
+}
+
+# quiet function print calls
+quiet <- function(x) { 
+  sink(tempfile()) 
+  on.exit(sink()) 
+  invisible(force(x)) 
+}
+
 # ggplot aesthetics
 UNR <- function(){
   ggplot2::theme(text = ggplot2::element_text(color = "black", size = 15),

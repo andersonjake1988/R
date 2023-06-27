@@ -339,7 +339,7 @@ UNR <- function(){
   ggplot2::theme(text = ggplot2::element_text(color = "black", size = 15),
                  plot.title = ggplot2::element_text(face = "bold", color = "darkblue", margin = ggplot2::margin(b = 15)),
                  plot.subtitle = ggplot2::element_text(size = 10),
-                 axis.ticks = ggplot2::element_line(size = 1.5),
+                 axis.ticks = ggplot2::element_line(linewidth = 1.5),
                  axis.title = ggplot2::element_text(face = "bold", line = 2),
                  axis.title.x = ggplot2::element_text(margin = ggplot2::margin(t = 5), color = "darkblue", size = 15),
                  axis.title.y = ggplot2::element_text(margin = ggplot2::margin(r = 10), color = "darkblue", size = 15),
@@ -353,12 +353,12 @@ UNR <- function(){
                  plot.background = ggplot2::element_rect(fill = "white"),
                  plot.margin = ggplot2::margin(t = 10, r = 50, b = 10, l = 10),
                  panel.background = ggplot2::element_rect(fill = "white"),
-                 panel.border = ggplot2::element_rect(fill = "NA", color = "darkblue", size = 1.5),
+                 panel.border = ggplot2::element_rect(fill = "NA", color = "darkblue", linewidth = 1.5),
                  legend.background = ggplot2::element_rect(color = "black", fill = "white"),
                  legend.key =  ggplot2::element_rect(fill = "white"),
                  legend.text = ggplot2::element_text(color = "black"),
                  legend.position = "bottom",
-                 strip.background = ggplot2::element_rect(color = "blue", fill = "grey75", size = 2),
+                 strip.background = ggplot2::element_rect(color = "blue", fill = "grey75", linewidth = 2),
                  strip.text.y = ggplot2::element_text(size = 13, face = "bold"),
                  panel.grid = ggplot2::element_blank())
 }
@@ -391,7 +391,7 @@ lm_text_pos <- function(y, x, data, xpos = NULL, ypos = NULL, alpha = 0.5, size 
 }
 
 ggplot(mtcars, aes(x = mpg, y = disp))+
-  geom_point(size = 3)+
+  geom_point(size = 2)+
   geom_smooth(method = lm, se = F) +
-  lm_text_pos(data = mtcars, x = 'mpg', y = 'disp', xpos = 27, size = 3)+
+  lm_text_pos(data = mtcars, x = 'mpg', y = 'disp', xpos = 27, size = 2.5)+
   UNR()

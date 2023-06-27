@@ -8,7 +8,7 @@ library(tidyverse)
 # Completed Formatting Functions
 ##############################################################
 # Function for installing/loading packages
-load_packages <- function(packages = c("tidyverse", "lubridate", "scales", "rwdplyr", "rwendpoints", "kableExtra")){
+load_packages <- function(packages = c("tidyverse", "lubridate", "mosaic", "scales", "kableExtra")){
   is.installed <- packages %in% .packages(all.available = TRUE)
   lapply(packages[!is.installed], install.packages)
   invisible(lapply(packages, library, character.only = TRUE, verbose = FALSE))

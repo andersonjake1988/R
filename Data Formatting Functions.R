@@ -7,6 +7,250 @@ library(tidyverse)
 ##############################################################
 # Completed Formatting Functions
 ##############################################################
+# Function for installing/loading packages
+load_packages <- function(packages = c("tidyverse", "lubridate", "scales", "rwdplyr", "rwendpoints", "kableExtra")){
+  is.installed <- packages %in% .packages(all.available = TRUE)
+  lapply(packages[!is.installed], install.packages)
+  invisible(lapply(packages, library, character.only = TRUE, verbose = FALSE))
+}
+
+# function to make a list of a given length with generic counting labels (i.e. cohort$step1) or custom labeled steps (i.e. cohort$step1ai)
+create_step_list <- function(n = length(names), names = seq(n), prefix = "step"){
+  paste0(prefix, names) %>%
+    factor(levels = paste0(prefix, names)) %>%
+    split(rep(NA, n), .)
+}
+
+## function to make a table that automatically indents subcategories (i.e. 1, 1a, 1ai)
+step_kable <- function(output_table, top_color = "lightblue", top_text_color = "black", kable_theme = "classic", 
+                       kable_style = "hover", collapse_align = "middle", collapse = FALSE, title = NA, escape = FALSE){
+  assertthat::assert_that(kable_theme %in% c("classic", "classic_2", "minimal", "material", "material_dark"), 
+                          msg = 'kable_theme must be one the following: "classic", "classic_2", "minimal", "material", "material_dark"')
+  assertthat::assert_that(all(kable_style %in% c("striped", "hover", "basic")), 
+                          msg = 'kable_style must be one or more of the following: "striped", "hover", "basic"')
+  assertthat::assert_that(all(collapse_align %in% c("middle", "top", "bottom")), 
+                          msg = 'collapse_align must be one or more of the following: "middle", "top", "bottom"')
+  step_breakdown <- function(steps){
+    a <- str_extract(steps, "[a-zA-Z].*|\\*|\\+|\\-")
+    rom <- str_extract(a, "i+.*|v+.*|x+.*")
+    sym1 <- str_extract(rom, "\\-+.*|\\++.*|\\*+.*")
+    sym2 <- str_extract(a, "\\-+.*|\\++.*|\\*+.*")
+    b <- str_extract(steps, "[0-9].*|\\s") 
+    for(i in seq(b)){
+      if(!is.na(sym1[i])){
+        b[i] <- sym1[i]
+      } else if(!is.na(sym2[i])){
+        b[i] <- sym2[i]
+      } else if(!is.na(rom[i])){
+        b[i] <- rom[i]
+      } else if(!is.na(a[i])){
+        b[i] <- a[i]
+      }
+    }
+    return(b)
+  }
+  indent_pos <- function(step_breakdown){
+    a <- str_extract(step_breakdown, "[a-zA-Z].*|\\-+.*|\\++.*|\\*+.*")
+    rom <- str_extract(a, "i+.*|v+.*|x+.*")
+    sym <- str_extract(rom, "\\-+.*|\\++.*|\\*+.*")
+    b <- str_extract(step_breakdown, "[0-9]|\\s") 
+    if(all(is.na(rom))){
+      sort(c(which(!is.na(a)), which(!is.na(sym))))
+    } else if(all(is.na(a))){
+      sort(c(which(!is.na(rom)), which(!is.na(sym))))
+    } else {
+      sort(c(which(!is.na(a)), which(!is.na(rom))))
+    }
+  }
+  if("Step" %in% colnames(output_table)){
+    output_table$Step <- step_breakdown(output_table$Step)
+    indent <- indent_pos(output_table$Step)
+    theme <- match.fun(paste0("kable_", kable_theme))
+    kable(output_table, align = ifelse(all(is.na(indent)), "clc", "llc"), caption = title, escape = escape) %>%
+      add_indent(indent) %>%
+      column_spec(1, width = "1.5cm", border_left = TRUE) %>%
+      column_spec(2, border_left = TRUE, border_right = TRUE) %>%
+      column_spec(3, width = "1.75cm", border_right = TRUE) %>%
+      theme(kable_style, 
+            row_label_position = "c") %>%
+      row_spec(0, align = "c", color = top_text_color, background = top_color, bold = TRUE, font_size = 16) %>%
+      row_spec(1:nrow(output_table), extra_css = "border-bottom: 1px solid", align = "middle") %>%
+      {if(collapse == TRUE) collapse_rows(., columns = 1, valign = collapse_align) else .}  
+  } else {
+    theme <- match.fun(paste0("kable_", kable_theme))
+    kable(output_table, align = "c", caption = title, , escape = escape) %>%
+      theme(kable_style, 
+            row_label_position = "c") %>%
+      column_spec(1:length(output_table), border_right = TRUE, border_left = TRUE) %>%
+      row_spec(0, align = "c", color = top_text_color, background = top_color, bold = TRUE, font_size = 16) %>%
+      row_spec(1:nrow(output_table), extra_css = "border-bottom: 1px solid", align = "c") %>%
+      {if(collapse == TRUE) collapse_rows(., columns = 1, valign = collapse_align) else .}   
+  } 
+}
+
+## function to label and glimpse all tables in a list
+glimpse_tbls <- function(list){
+  for(i in seq(list)){
+    print(names(list[i]))
+    glimpse(list[[i]])
+    cat('\n')
+  }
+}
+
+## function to derive all combinations of strings in a vector of strings from a single to length n of combinations
+all_combinations <- function(x, sep = ",", output = "vec", print = FALSE){
+  assertthat::assert_that(output %in% c("vec", "df"),
+                          msg = "output must be one of the following: 'vec' for vector, or 'df' for dataframe")
+  combo <- seq(length(x))
+  size <- 0
+  for(i in combo){
+    size <- sum(size, choose(length(x),i)) 
+  }
+  a <- vector()
+  if(print){print(glue::glue("Total of {size} combinations:"))}
+  for(i in combo){
+    test <- as.list(as.data.frame(combn(x, i))) %>%
+      map(~str_sort(.)) %>%
+      map_chr(~str_flatten(., collapse = sep)) %>%
+      unname()
+    a <- c(a, test)
+  }
+  if(output == "vec"){
+    return(a)
+  } else if(output == "df"){
+    a <- as.data.frame(a)
+    names(a) <- NULL
+    format(a, justify = "left")
+  }
+}
+
+## function to search for a term in the column names of a list of tables 
+var_search <- function(tbl, term){
+  a <- tbl %>%
+    map(., colnames) %>%
+    unlist() %>%
+    as.data.frame(row.names = names(.)) 
+  names(a) <- "variable"
+  b <- a %>%
+    filter(grepl(term, variable, ignore.case = TRUE))
+  return(b)
+}
+
+## Function used to fix copy and pasting operations to generate various outputs
+paste_fixer <- function(x, split_by = "\n", output = "vector", code_style = "newline", num_add = TRUE, num_removal = "first_only",
+                        comment_spacing = 2, comment_border = TRUE, border_length = 100, steps = NULL, str_wrap = 120){
+  assertthat::assert_that(output %in% c("vector", "string", "code", "comment", "regex"),
+                          msg = "output must be one of the following: 'vector', 'string', 'code', 'regex', or 'comment'")
+  assertthat::assert_that(code_style %in% c("comma", "newline"),
+                          msg = "code_style must be one of the following: 'comma', 'newline'")
+  assertthat::assert_that(num_removal %in% c(TRUE, FALSE, "first_only"),
+                          msg = "num_removal must be TRUE, FALSE, or 'first_only'")
+  if(num_removal == TRUE){
+    x <- gsub('[[:digit:]].', '', x)
+  }
+  
+  
+  if(output == "vector"){
+    x %>%
+      str_split(split_by) %>%
+      map(str_squish) %>%
+      unlist() %>%
+      {if(num_removal == "first_only") str_replace_all(., "^\\d+\\s", "") else .}
+  } else if (output == "string"){
+    a <- x %>%
+      str_split(split_by) %>%
+      map(str_squish) %>%
+      unlist() %>%
+      {if(num_removal == "first_only") str_replace_all(., "^\\d+\\s", "") else .} %>%
+      {if(num_add) paste0(seq(.), ". ", .) else .} %>%
+      {if(!is.null(steps)) paste0(steps, ". ", .) else .}
+    cat('\n')
+    cat(a, sep = "\n")
+    clipr::write_clip(a)
+    cat('\n\n')
+    cat('copied to clipboard')
+  } else if (output == "comment"){
+    b <- x %>%
+      str_split(split_by) %>%
+      map(str_squish) %>%
+      unlist() %>%
+      {if(num_removal == "first_only") str_replace_all(., "^\\d+\\s", "") else .} %>%
+      {if(comment_border == TRUE & is.null(steps)) paste0(
+        str_flatten(rep('#', border_length)), 
+        '\n', 
+        {if(num_add == TRUE) 
+          paste(paste0("# ", seq(length(.)), "."), .) 
+          else 
+            paste0("# ", .)}, 
+        '\n', 
+        str_flatten(rep('#', border_length))) 
+        else .} %>%
+      {if(comment_border == TRUE & !is.null(steps)) paste0(
+        str_flatten(rep('#', border_length)), 
+        '\n', 
+        paste(paste0("# ", steps, "."), .),
+        '\n', 
+        str_flatten(rep('#', border_length))) 
+        else .} %>%
+      {if(comment_border != TRUE & is.null(steps)) {if(num_add == TRUE) paste(paste0("# ", seq(length(.)), "."), .) 
+        else paste0("# ", .)} 
+        else .} %>%
+      {if(comment_border != TRUE & !is.null(steps)) paste(paste0("# ", steps, "."), .) 
+        else .} 
+    cat('\n')
+    cat(b, sep = str_flatten(rep('\n', comment_spacing + 1)))
+    clipr::write_clip(paste(b, str_flatten(rep("\n ", comment_spacing))))
+    cat('\n\n')
+    cat('copied to clipboard')
+  } else if(output == 'code' & code_style == "comma"){
+    c <- suppressWarnings(x %>%
+                            str_split(split_by) %>%
+                            str_squish() %>%
+                            str_replace_all("\"\\s", "\"") %>%
+                            str_replace_all("\\s\"", "\"") %>%
+                            str_replace_all("\",\"", "\", \"") %>%
+                            str_replace_all('\\\\t', '') %>%
+                            {if(num_removal == "first_only") str_replace_all(., "\"\\d+\\s", "\"") else .} %>%
+                            strwrap(str_wrap))
+    cat('\n')
+    cat(c, sep = "\n")
+    clipr::write_clip(c)
+    cat('\n')
+    cat('copied to clipboard')
+  } else if(output == 'code' & code_style == "newline"){
+    d <- suppressWarnings(x %>%
+                            str_split(split_by) %>%
+                            str_squish() %>%
+                            str_replace_all("\"\\s", "\"") %>%
+                            str_replace_all("\\s\"", "\"") %>%
+                            str_replace_all("\",\"", "\",\n\"") %>%
+                            str_replace_all('\\\\t', '') %>%
+                            {if(num_removal == "first_only") str_replace_all(., "\"\\d+\\s", "\"") else .})
+    cat('\n')
+    cat(d)
+    clipr::write_clip(d)
+    cat('\n\n')
+    cat('copied to clipboard')
+  } else if (output == "regex"){
+    e <- x %>%
+      str_split(split_by) %>%
+      map(str_squish) %>%
+      unlist() %>%
+      {if(num_removal == "first_only") str_replace_all(., "^\\d+\\s", "") else .} %>%
+      str_flatten(collapse = "|") %>%
+      paste0('\"', ., '\"')
+    cat('\n')
+    cat(e)
+    clipr::write_clip(e)
+    cat('\n\n')
+    cat('copied to clipboard')
+  }
+}
+
+## run a summary and convert to data frame
+summary_to_df <- function(x){
+  as_tibble(as.list(summary(x)))
+}
 
 # Changing variables with less than 10 different values to Factors
 mosaic::factorize() "works pretty well, but below will customize the cutoff for unique values"

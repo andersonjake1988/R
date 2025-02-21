@@ -22,20 +22,20 @@ create_step_list <- function(n = length(names), names = seq(n), prefix = "step")
 }
 
 ## function to make a table that automatically indents subcategories (i.e. 1, 1a, 1ai)
-step_kable <- function(output_table, top_color = "lightblue", top_text_color = "black", kable_theme = "classic", 
+step_kable <- function(output_table, top_color = "lightblue", top_text_color = "black", kable_theme = "classic",
                        kable_style = "hover", collapse_align = "middle", collapse = FALSE, title = NA, escape = FALSE){
-  assertthat::assert_that(kable_theme %in% c("classic", "classic_2", "minimal", "material", "material_dark"), 
+  assertthat::assert_that(kable_theme %in% c("classic", "classic_2", "minimal", "material", "material_dark"),
                           msg = 'kable_theme must be one the following: "classic", "classic_2", "minimal", "material", "material_dark"')
-  assertthat::assert_that(all(kable_style %in% c("striped", "hover", "basic")), 
+  assertthat::assert_that(all(kable_style %in% c("striped", "hover", "basic")),
                           msg = 'kable_style must be one or more of the following: "striped", "hover", "basic"')
-  assertthat::assert_that(all(collapse_align %in% c("middle", "top", "bottom")), 
+  assertthat::assert_that(all(collapse_align %in% c("middle", "top", "bottom")),
                           msg = 'collapse_align must be one or more of the following: "middle", "top", "bottom"')
   step_breakdown <- function(steps){
     a <- str_extract(steps, "[a-zA-Z].*|\\*|\\+|\\-")
     rom <- str_extract(a, "i+.*|v+.*|x+.*")
     sym1 <- str_extract(rom, "\\-+.*|\\++.*|\\*+.*")
     sym2 <- str_extract(a, "\\-+.*|\\++.*|\\*+.*")
-    b <- str_extract(steps, "[0-9].*|\\s") 
+    b <- str_extract(steps, "[0-9].*|\\s")
     for(i in seq(b)){
       if(!is.na(sym1[i])){
         b[i] <- sym1[i]
@@ -53,7 +53,7 @@ step_kable <- function(output_table, top_color = "lightblue", top_text_color = "
     a <- str_extract(step_breakdown, "[a-zA-Z].*|\\-+.*|\\++.*|\\*+.*")
     rom <- str_extract(a, "i+.*|v+.*|x+.*")
     sym <- str_extract(rom, "\\-+.*|\\++.*|\\*+.*")
-    b <- str_extract(step_breakdown, "[0-9]|\\s") 
+    b <- str_extract(step_breakdown, "[0-9]|\\s")
     if(all(is.na(rom))){
       sort(c(which(!is.na(a)), which(!is.na(sym))))
     } else if(all(is.na(a))){
@@ -71,30 +71,29 @@ step_kable <- function(output_table, top_color = "lightblue", top_text_color = "
       column_spec(1, width = "1.5cm", border_left = TRUE) %>%
       column_spec(2, border_left = TRUE, border_right = TRUE) %>%
       column_spec(3, width = "1.75cm", border_right = TRUE) %>%
-      theme(kable_style, 
+      theme(kable_style,
             row_label_position = "c") %>%
       row_spec(0, align = "c", color = top_text_color, background = top_color, bold = TRUE, font_size = 16) %>%
       row_spec(1:nrow(output_table), extra_css = "border-bottom: 1px solid", align = "middle") %>%
-      {if(collapse == TRUE) collapse_rows(., columns = 1, valign = collapse_align) else .}  
+      {if(collapse == TRUE) collapse_rows(., columns = 1, valign = collapse_align) else .}
   } else {
     theme <- match.fun(paste0("kable_", kable_theme))
     kable(output_table, align = "c", caption = title, , escape = escape) %>%
-      theme(kable_style, 
+      theme(kable_style,
             row_label_position = "c") %>%
       column_spec(1:length(output_table), border_right = TRUE, border_left = TRUE) %>%
       row_spec(0, align = "c", color = top_text_color, background = top_color, bold = TRUE, font_size = 16) %>%
       row_spec(1:nrow(output_table), extra_css = "border-bottom: 1px solid", align = "c") %>%
-      {if(collapse == TRUE) collapse_rows(., columns = 1, valign = collapse_align) else .}   
-  } 
+      {if(collapse == TRUE) collapse_rows(., columns = 1, valign = collapse_align) else .}
+  }
 }
 
 ## function to label and glimpse all tables in a list
-glimpse_tbls <- function(list){
-  for(i in seq(list)){
-    print(names(list[i]))
-    glimpse(list[[i]])
-    cat('\n')
-  }
+glimpse_list <- function(list){
+  iwalk(list, function(x,y){
+    cat(glue("\n\n{y}\n\n"))
+    glimpse(x)
+  })
 }
 
 ## function to derive all combinations of strings in a vector of strings from a single to length n of combinations
@@ -104,7 +103,7 @@ all_combinations <- function(x, sep = ",", output = "vec", print = FALSE){
   combo <- seq(length(x))
   size <- 0
   for(i in combo){
-    size <- sum(size, choose(length(x),i)) 
+    size <- sum(size, choose(length(x),i))
   }
   a <- vector()
   if(print){print(glue::glue("Total of {size} combinations:"))}
@@ -124,12 +123,12 @@ all_combinations <- function(x, sep = ",", output = "vec", print = FALSE){
   }
 }
 
-## function to search for a term in the column names of a list of tables 
+## function to search for a term in the column names of a list of tables
 var_search <- function(tbl, term){
   a <- tbl %>%
     map(., colnames) %>%
     unlist() %>%
-    as.data.frame(row.names = names(.)) 
+    as.data.frame(row.names = names(.))
   names(a) <- "variable"
   b <- a %>%
     filter(grepl(term, variable, ignore.case = TRUE))
@@ -148,8 +147,8 @@ paste_fixer <- function(x, split_by = "\n", output = "vector", code_style = "new
   if(num_removal == TRUE){
     x <- gsub('[[:digit:]].', '', x)
   }
-  
-  
+
+
   if(output == "vector"){
     x %>%
       str_split(split_by) %>%
@@ -176,27 +175,27 @@ paste_fixer <- function(x, split_by = "\n", output = "vector", code_style = "new
       unlist() %>%
       {if(num_removal == "first_only") str_replace_all(., "^\\d+\\s", "") else .} %>%
       {if(comment_border == TRUE & is.null(steps)) paste0(
-        str_flatten(rep('#', border_length)), 
-        '\n', 
-        {if(num_add == TRUE) 
-          paste(paste0("# ", seq(length(.)), "."), .) 
-          else 
-            paste0("# ", .)}, 
-        '\n', 
-        str_flatten(rep('#', border_length))) 
+        str_flatten(rep('#', border_length)),
+        '\n',
+        {if(num_add == TRUE)
+          paste(paste0("# ", seq(length(.)), "."), .)
+          else
+            paste0("# ", .)},
+        '\n',
+        str_flatten(rep('#', border_length)))
         else .} %>%
       {if(comment_border == TRUE & !is.null(steps)) paste0(
-        str_flatten(rep('#', border_length)), 
-        '\n', 
+        str_flatten(rep('#', border_length)),
+        '\n',
         paste(paste0("# ", steps, "."), .),
-        '\n', 
-        str_flatten(rep('#', border_length))) 
+        '\n',
+        str_flatten(rep('#', border_length)))
         else .} %>%
-      {if(comment_border != TRUE & is.null(steps)) {if(num_add == TRUE) paste(paste0("# ", seq(length(.)), "."), .) 
-        else paste0("# ", .)} 
+      {if(comment_border != TRUE & is.null(steps)) {if(num_add == TRUE) paste(paste0("# ", seq(length(.)), "."), .)
+        else paste0("# ", .)}
         else .} %>%
-      {if(comment_border != TRUE & !is.null(steps)) paste(paste0("# ", steps, "."), .) 
-        else .} 
+      {if(comment_border != TRUE & !is.null(steps)) paste(paste0("# ", steps, "."), .)
+        else .}
     cat('\n')
     cat(b, sep = str_flatten(rep('\n', comment_spacing + 1)))
     clipr::write_clip(paste(b, str_flatten(rep("\n ", comment_spacing))))
@@ -328,10 +327,10 @@ EQ_spl_rmc <- function(data, eq_col){
 }
 
 # quiet function print calls
-quiet <- function(x) { 
-  sink(tempfile()) 
-  on.exit(sink()) 
-  invisible(force(x)) 
+quiet <- function(x) {
+  sink(tempfile())
+  on.exit(sink())
+  invisible(force(x))
 }
 
 # ggplot aesthetics
@@ -373,25 +372,25 @@ lm_text_pos <- function(y, x, data, xpos = NULL, ypos = NULL, alpha = 0.5, size 
   P <- signif(asdf$coefficients[8], digits = 3)
   x_pos <- (((max(data[[x]])-min(data[[x]]))*.5)+min(data[[x]]))
   y_pos <- x_pos*M + Y_int *1.05
-  form2 <- form2 <- paste(paste0("Y = ", M, "x", " + ", Y_int), 
+  form2 <- form2 <- paste(paste0("Y = ", M, "x", " + ", Y_int),
                           paste('R^2 =', R, ',  p-value =', P), sep = '\n')
   if(is.null(xpos) & is.null(ypos)){
-    return(annotate(geom = 'label', x = x_pos, y = y_pos, label = form2, 
+    return(annotate(geom = 'label', x = x_pos, y = y_pos, label = form2,
                     size = size, alpha = alpha))
   } else if(!is.null(xpos) & is.null(ypos)){
-    return(annotate(geom = 'label', x = xpos, y = y_pos, label = form2, 
+    return(annotate(geom = 'label', x = xpos, y = y_pos, label = form2,
                     size = size, alpha = alpha))
   } else if(is.null(xpos) & !is.null(ypos)){
-    return(annotate(geom = 'label', x = x_pos, y = ypos, label = form2, 
+    return(annotate(geom = 'label', x = x_pos, y = ypos, label = form2,
                     size = size, alpha = alpha))
   } else if(!is.null(xpos) & !is.null(ypos)){
-    return(annotate(geom = 'label', x = xpos, y = ypos, label = form2, 
+    return(annotate(geom = 'label', x = xpos, y = ypos, label = form2,
                     size = size, alpha = alpha))
   }
 }
 
-ggplot(mtcars, aes(x = mpg, y = disp))+
-  geom_point(size = 2)+
-  geom_smooth(method = lm, se = F) +
-  lm_text_pos(data = mtcars, x = 'mpg', y = 'disp', xpos = 27, size = 2.5)+
-  UNR()
+# ggplot(mtcars, aes(x = mpg, y = disp))+
+#   geom_point(size = 2)+
+#   geom_smooth(method = lm, se = F) +
+#   lm_text_pos(data = mtcars, x = 'mpg', y = 'disp', xpos = 27, size = 2.5)+
+#   UNR()
